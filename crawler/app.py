@@ -48,10 +48,10 @@ def index():
 def search():
     # crawler.crawl_and_index()
     query = request.args.get('query', '')
-    return searchDocs(query)
+    return searchPublications(query)
 
 
-def searchDocs(query):
+def searchPublications(query):
     db, cursor = get_db()
     print(query.split(' '))
     search_query = "* ".join(query.split()) + "*"
