@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import sqlite3  # Import SQLite library
+from protego import Protego
 
 # Constant variables
 BASE_PORTAL_URI = "https://pureportal.coventry.ac.uk/en/organisations/ihw-centre-for-health-and-life-sciences-chls"
@@ -22,17 +23,8 @@ visited_urls = set()  # Initialize an empty set to track visited URLs
 
 def is_allowed_by_robots(robots_content, url):
     try:
-        # Construct regex pattern to match rules relevant to all user-agents
-        pattern = re.compile(
-            r'^User-agent:\s*\*\s*(.*?)\s*$', re.MULTILINE | re.DOTALL)
-        matches = re.search(pattern, robots_content)
-        if matches:
-            # Extract rules for all user-agents
-            rules = matches.group(1).strip()
-            # Check if the URL is disallowed
-            if re.search(r'^Disallow:\s*' + re.escape(url) + r'.*', rules, re.MULTILINE | re.IGNORECASE):
-                return False
-        return True
+        rp = Protego.parse(robots_content)
+        return rp.can_fetch(url, "CRAWLER")
     except Exception as e:
         print(f"Error fetching robots.txt: {e}")
         return True  # Allow crawling if there's an error
@@ -47,24 +39,6 @@ parsed_uri = urlparse(BASE_PORTAL_URI)
 base_uri = f"{parsed_uri.scheme}://{parsed_uri.netloc}"
 robots_url = urljoin(base_uri, '/robots.txt')
 robots_content = requests.get(robots_url).text
-robots_content = """
-User-Agent: *
-Crawl-Delay: 1
-Disallow: /*?*format=rss
-Disallow: /*?*export=xls
-Disallow: /en/persons/*
-
-User-agent: GPTBot
-Disallow: /
-
-User-agent: ChatGPT-User
-Disallow: /
-
-User-agent: Google-Extended
-Disallow: /
-
-Sitemap: https://pureportal.coventry.ac.uk/sitemap.xml
-"""
 # Fetch the page containing the list of publications
 if not is_allowed_by_robots(robots_content, BASE_PORTAL_URI):
     print("Crawling not allowed by robots.txt")
@@ -78,18 +52,18 @@ if matches:
 
 
 def fetch_publications(url, depth=1):
-    print(f"Visiting: {url}")
+    print(f"{'-' * (depth-1)}Visiting: {url}")
 
     if url in visited_urls:
-        print(f"URL {url} has already been visited.")
+        print(f"{'-' * (depth-1)}URL {url} has already been visited.")
         return
 
     visited_urls.add(url)
     if (depth > MAX_DEPTH):
-        print(f"MAX_DEPTH {MAX_DEPTH} reached.")
+        print(f"{'-' * (depth-1)}MAX_DEPTH {MAX_DEPTH} reached.")
         return
     if not is_allowed_by_robots(robots_content, url):
-        print("Crawling not allowed by robots.txt")
+        print(f"{'-' * (depth-1)}Crawling not allowed by robots.txt")
         return
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
