@@ -53,11 +53,12 @@ def search():
 
 def searchDocs(query):
     db, cursor = get_db()
-    search_query = f"{query}*"
+    print(query.split(' '))
+    search_query = "* ".join(query.split()) + "*"
     print(search_query)
     # Execute the SQL query to search for text in all fields (case-insensitive)
     cursor.execute('''SELECT *,rank FROM publications 
-                    WHERE title match ?
+                    WHERE publications match ?
                    order by rank desc
                       ''',
                    (search_query,))
