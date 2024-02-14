@@ -23,10 +23,7 @@
                 <a v-if="row.item.publication_url!='N/A'" :href="row.item.publication_url" target="_blank">{{ row.item.publication_url }}</a>
                 <span v-else>{{ row.item.publication_url }}</span>
             </template>
-            <template v-slot:cell(author_profile_url)="row">
-                <a v-if="row.item.author_profile_url!='N/A'"  :href="row.item.author_profile_url" target="_blank">{{ row.item.author_profile_url }}</a>
-                <span v-else>{{ row.item.author_profile_url }}</span>
-            </template>
+            
         </b-table>
 
     </div>
@@ -46,10 +43,9 @@
                 searchResults: [],
                 fields: [
                     { key: 'title', label: 'Title', tdClass: 'col-width-30' },
-                    { key: 'authors', label: 'Authors', tdClass: 'col-width-15' },
+                    { key: 'author', label: 'Authors', tdClass: 'col-width-15' },
                     { key: 'year', label: 'Year', tdClass: 'col-width-10' },
                     { key: 'publication_url', label: 'Publication URL', tdClass: 'col-width-20' },
-                    { key: 'author_profile_url', label: 'Author Profile URL', tdClass: 'col-width-25' }
             ]
             },
             methods: {

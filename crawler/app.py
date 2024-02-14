@@ -16,7 +16,7 @@ def get_db():
         g.cursor = g.db.cursor()
         # Ensure database is created
         g.cursor.execute('''CREATE TABLE IF NOT EXISTS publications 
-                    (title TEXT PRIMARY KEY, author TEXT, year TEXT, publication_url TEXT, author_profile_url TEXT)''')
+                    (title TEXT PRIMARY KEY, author TEXT, year TEXT, publication_url TEXT)''')
     return g.db, g.cursor
 
 
@@ -56,10 +56,9 @@ def searchDocs(query):
                       OR LOWER(author) LIKE ? 
                       OR LOWER(year) LIKE ? 
                       OR LOWER(publication_url) LIKE ? 
-                      OR LOWER(author_profile_url) LIKE ?''',
+                      ''',
                    ('%' + query.lower() + '%', '%' + query.lower() + '%',
-                    '%' + query.lower() + '%', '%' + query.lower() + '%',
-                    '%' + query.lower() + '%'))
+                    '%' + query.lower() + '%', '%' + query.lower() + '%'))
     # Fetch the search results
     search_results = cursor.fetchall()
     results = []
