@@ -31,8 +31,12 @@ def is_allowed_by_robots(robots_content, url):
 
 
 # Create a sqlite table to store publication information
-cursor.execute('''CREATE TABLE IF NOT EXISTS publications 
-                (title TEXT PRIMARY KEY, author TEXT, year TEXT, publication_url TEXT)''')
+# cursor.execute('''CREATE TABLE IF NOT EXISTS publications
+#                 (title TEXT PRIMARY KEY, author TEXT, year TEXT, publication_url TEXT)''')
+cursor.execute('''
+                         CREATE VIRTUAL TABLE IF NOT EXISTS publications 
+                    USING FTS5  (title ,author,year, publication_url )
+                         ''')
 # fetch data from the Coventry University Research Centre for Health and Life Sciences (RCHL) portal using BS4
 # First fetch the robots.txt content
 parsed_uri = urlparse(BASE_PORTAL_URI)
@@ -98,9 +102,13 @@ def fetch_publications(url, depth=1):
         try:
             # Insert data into SQLite table
             # print(f"Publication: {title} with url {publication_url}")
-            cursor.execute("INSERT OR REPLACE INTO publications VALUES (?, ?, ?, ?)",
-                           (title, ",".join(authors), year, publication_url))
-            conn.commit()
+            cursor.execute(
+                "SELECT COUNT(*) FROM publications WHERE publication_url = ?", (publication_url,))
+            count = cursor.fetchone()[0]
+            if (count <= 0):
+                cursor.execute("INSERT INTO publications VALUES (?, ?, ?, ?)",
+                               (title, ",".join(authors), year, publication_url))
+                conn.commit()
             for author_url in author_urls:
                 fetch_publications(author_url,
                                    depth=depth+1)

@@ -15,8 +15,13 @@ def get_db():
         g.db.row_factory = sqlite3.Row
         g.cursor = g.db.cursor()
         # Ensure database is created
-        g.cursor.execute('''CREATE TABLE IF NOT EXISTS publications 
-                    (title TEXT PRIMARY KEY, author TEXT, year TEXT, publication_url TEXT)''')
+        # g.cursor.execute('''CREATE TABLE IF NOT EXISTS publications
+        #             (title TEXT PRIMARY KEY, author TEXT, year TEXT, publication_url TEXT)''')
+        g.cursor.execute('''
+                         CREATE VIRTUAL TABLE IF NOT EXISTS publications 
+                    USING FTS5  (title ,author,year, publication_url )
+                         ''')
+
     return g.db, g.cursor
 
 
@@ -43,22 +48,19 @@ def index():
 def search():
     # crawler.crawl_and_index()
     query = request.args.get('query', '')
-    print(query)
     return searchDocs(query)
 
 
 def searchDocs(query):
     db, cursor = get_db()
-
+    search_query = f"{query}*"
+    print(search_query)
     # Execute the SQL query to search for text in all fields (case-insensitive)
-    cursor.execute('''SELECT * FROM publications 
-                    WHERE LOWER(title) LIKE ? 
-                      OR LOWER(author) LIKE ? 
-                      OR LOWER(year) LIKE ? 
-                      OR LOWER(publication_url) LIKE ? 
+    cursor.execute('''SELECT *,rank FROM publications 
+                    WHERE title match ?
+                   order by rank desc
                       ''',
-                   ('%' + query.lower() + '%', '%' + query.lower() + '%',
-                    '%' + query.lower() + '%', '%' + query.lower() + '%'))
+                   (search_query,))
     # Fetch the search results
     search_results = cursor.fetchall()
     results = []
