@@ -8,12 +8,9 @@ from wordcloud import WordCloud
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
 
 import plotly.graph_objs as go
-import plotly.express as px
 import io
-from sklearn.manifold import TSNE
 
 
 app = Flask(__name__)
