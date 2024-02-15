@@ -32,15 +32,22 @@
                   <b-button type="submit" variant="primary">Classify</b-button>
                 </b-input-group>
                 <b-alert variant="success" show v-if="classificationResult"><b>Category: </b>{{classificationResult}}</b-alert>
+                
               </form>
           </b-col>
           <b-col cols="6">
-              <div id="plotlyDiv">
-                <img src="/clusters" alt="Pie Chart" height="384"/>
-              </div>
+            <div class="d-flex justify-content-end">
+              <span v-if="!scatterLoaded"><b-spinner small></b-spinner>&nbsp;&nbsp;Loading Scatter Plot ..</span>
+            <b-link @click="$refs.scatterModal.show()" v-if="scatterLoaded">Open Scatter Plot</b-link>
+          </div>
+            <b-modal ref="scatterModal" title="Scatter Plot" size="lg">
+              <img :src="scatterImageData" alt="Scatter Plot" width="700">
+            </b-modal>
+            <div id="plotlyDiv">
+              <img src="/clusters" alt="Pie Chart" height="384"/>
+            </div>
           </b-col>
-      </b-row>
-      
+        </b-row>
         
       
     </div>
@@ -58,6 +65,8 @@
             data: {
                 headline: '',
                 classificationResult: '',
+                scatterLoaded:false,
+                scatterImageData:'',
             },
             methods: {
                 classify() {
@@ -78,6 +87,14 @@
                         });
                 }
             },
+            mounted(){
+              fetch('/scatter').then(async (response)=>{
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                this.scatterImageData = imageUrl;
+                this.scatterLoaded=true
+              })
+            }
         });
     </script>
     <style>

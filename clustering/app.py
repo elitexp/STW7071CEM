@@ -7,9 +7,13 @@ from wordcloud import WordCloud
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
-from sklearn.decomposition import TruncatedSVD
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
 import plotly.graph_objs as go
+import plotly.express as px
 import io
+from sklearn.manifold import TSNE
 
 
 app = Flask(__name__)
@@ -29,6 +33,7 @@ def tokenize(text):
 print("Reading Data...")
 
 data = pd.read_json("./data/News_Category_Dataset_v3.json", lines=True)
+print(data['category'].value_counts())
 categories = ['SPORTS', 'BUSINESS', 'HEALTHY LIVING']
 dataFrame = data[data['category'].isin(categories)]
 dataFrame['category'] = dataFrame['category'].replace(
@@ -47,10 +52,12 @@ dataFrame = dataFrame.reindex(
 
 tfidf = TfidfVectorizer(tokenizer=tokenize, stop_words='english')
 tfs = tfidf.fit_transform(dataFrame['text'])
+print(tfs.shape)
 
 model = KMeans(n_clusters=3, random_state=5123)
 clusters = model.fit_predict(tfs)
 dataFrame['cluster'] = clusters
+
 
 # Find the cluster closest to SPORTS, BUSINESS, or HEALTHY LIVING
 sports_cluster = dataFrame[dataFrame['category']
@@ -102,6 +109,49 @@ def generate_wordcloud():
     wordcloud.to_image().save(img_buffer, format="PNG")
     img_buffer.seek(0)
     return Response(img_buffer, mimetype='image/png')
+
+
+@app.route('/scatter')
+def generate_scatter():
+    pca = PCA(n_components=2)
+    tfidf_reduced = pca.fit_transform(tfs.toarray())
+    n_clusters = 3
+    colors = ['blue', 'green', 'red', 'yellow']
+
+    traces = []
+    for i in range(n_clusters):
+        cluster_trace = go.Scatter(
+            x=tfidf_reduced[model.labels_ == i, 0],
+            y=tfidf_reduced[model.labels_ == i, 1],
+            mode='markers',
+            marker=dict(color=colors[i]),
+            name=cluster_map.get(i),
+            opacity=0.5
+        )
+        traces.append(cluster_trace)
+
+    # Add centroids as scatter trace
+    centroid_trace = go.Scatter(
+        x=model.cluster_centers_[:, 0],
+        y=model.cluster_centers_[:, 1],
+        mode='markers',
+        marker=dict(color='black', symbol='x', size=10),
+        name='Centroids'
+    )
+    traces.append(centroid_trace)
+
+    # Create layout
+    layout = go.Layout(
+        title='KMeans Clustering of News Articles',
+        xaxis=dict(title='Principal Component 1'),
+        yaxis=dict(title='Principal Component 2'),
+        legend=dict(x=0, y=1)
+    )
+
+    # Create figure
+    fig = go.Figure(data=traces, layout=layout)
+    img_bytes = fig.to_image(format="png")
+    return Response(img_bytes, mimetype='image/png')
 
 
 @app.route('/classify', methods=['POST'])
